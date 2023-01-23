@@ -3,7 +3,6 @@ package decoder
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/cloudflare/ebpf_exporter/v2/config"
@@ -71,7 +70,7 @@ func (s *Set) Decode(in []byte, label config.Label) ([]byte, error) {
 // DecodeLabels transforms eBPF map key bytes into a list of label values
 // according to configuration
 func (s *Set) DecodeLabels(in []byte, labels []config.Label) ([]string, error) {
-	values := make([]string, 0)
+	values := make([]string, len(labels))
 
 	off := uint(0)
 
@@ -89,7 +88,7 @@ func (s *Set) DecodeLabels(in []byte, labels []config.Label) ([]string, error) {
 		return nil, fmt.Errorf("error decoding labels: total size of key %#v is %d bytes, but wehave labels to decode %d", in, len(in), totalSize)
 	}
 
-	for _, label := range labels {
+	for i, label := range labels {
 		if len(label.Decoders) == 0 {
 			return nil, fmt.Errorf("error decoding label %q: no decoders set", label.Name)
 		}
@@ -103,7 +102,7 @@ func (s *Set) DecodeLabels(in []byte, labels []config.Label) ([]string, error) {
 
 		off += size
 
-		values = append(values, strings.Split(string(decoded), ":")...)
+		values[i] = string(decoded)
 	}
 
 	return values, nil
