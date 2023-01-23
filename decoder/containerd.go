@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/cloudflare/ebpf_exporter/v2/config"
+	"github.com/cloudflare/ebpf_exporter/v2/util"
 )
 
 // ContainerD is a decoder that transforms pid into Pod labels
@@ -23,20 +24,18 @@ func (c *ContainerD) Decode(in []byte, _ config.Decoder) ([]byte, error) {
 		c.cache = make(map[uint64][]byte)
 	}
 
-	pid, err := strconv.Atoi(string(in))
-	if err != nil {
-		return nil, err
-	}
+	byteOrder := util.GetHostByteOrder()
+	pid := byteOrder.Uint64(in)
 
-	if path, ok := c.cache[uint64(pid)]; ok {
+	if path, ok := c.cache[pid]; ok {
 		return path, nil
 	}
 
-	if err = c.refreshCache(); err != nil {
+	if err := c.refreshCache(); err != nil {
 		log.Printf("Error refreshing cgroup id to path map: %s", err)
 	}
 
-	if path, ok := c.cache[uint64(pid)]; ok {
+	if path, ok := c.cache[pid]; ok {
 		return path, nil
 	}
 
